@@ -175,3 +175,6 @@ cython_debug/
 
 # Output folders
 output*/
+
+# Video
+*.mp4
