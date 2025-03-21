@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator, SamPredictor
 
+# Download the model at https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth
+
 def show_image_mask_overlap(image, masks):
     # Create an overlay mask
     overlay = np.zeros_like(image, dtype=np.uint8)
