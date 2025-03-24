@@ -37,3 +37,4 @@ def extract_frames(video_path, output_folder, num_frames=120):
 video_path = "20211021_HR13_1_test_converted.mp4"  
 output_folder = "dataset_120_real"  
 extract_frames(video_path, output_folder)
+
