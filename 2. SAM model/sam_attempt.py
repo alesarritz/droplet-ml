@@ -45,7 +45,7 @@ def save_mask(masks, image, save_path):
     cv2.imwrite(save_path, mask_img)  # Save mask as PNG
 
 
-input_folder = "dataset_120_real"
+input_folder = "../dataset_120_real"
 output_folder = "dataset_120_real_masks"
 os.makedirs(output_folder, exist_ok=True)  # Create the output folder if it doesn't exist
 
