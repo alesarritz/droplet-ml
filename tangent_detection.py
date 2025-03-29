@@ -19,7 +19,7 @@ def detect_tangents(image_path):
     # Convert to HSV color space
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    # Define range for blue color (adjust if needed)
+    # Define range for blue color 
     lower_blue = np.array([100, 150, 50])
     upper_blue = np.array([140, 255, 255])
 
@@ -38,12 +38,12 @@ def detect_tangents(image_path):
 
     # Find the two intersection points with the bottom line
     height, width = image.shape[:2]
-    y_bottom = height - 1  # Bottom-most y-coordinate
+    y_bottom = 847 - 1  # Bottom-most y-coordinate
 
     intersection_points = []
     for point in contour:
         x, y = point[0]
-        if y >= y_bottom - 2:  # Allow some tolerance
+        if y >= y_bottom - 2: 
             intersection_points.append((x, y))
 
     # Ensure we have exactly two points
@@ -112,6 +112,7 @@ def detect_tangents(image_path):
 
         # Save the processed image
         output_path = os.path.join(output_folder, os.path.basename(image_path))
+        print(f"Final image shape before saving: {image.shape}")
         cv2.imwrite(output_path, image)
         print(f"Saved: {output_path} - Angle1: {180 - angle1}°, Angle2: {180 - angle2}°")
 

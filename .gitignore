@@ -176,6 +176,11 @@ cython_debug/
 
 # Output folders
 output*/
+data*/
+*mask*/
 
 # Video
 *.mp4
+
+# Compressed files
+*.zip

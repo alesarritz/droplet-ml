@@ -50,6 +50,10 @@ def detect_surface(image_path, color_image, binary):
 def detect_ellipse(image_path, output_path):
     # Load image in grayscale
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+
+    # Add black padding at the bottom 
+    image = cv2.copyMakeBorder(image, 0, 300, 0, 0, cv2.BORDER_CONSTANT, value=0)
+
     color_image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
     
     # Thresholding to create a binary image
