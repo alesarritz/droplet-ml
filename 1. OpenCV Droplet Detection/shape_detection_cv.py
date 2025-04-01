@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 # Input and output directories
-input_folder = "../dataset_120"
+input_folder = "dataset_120"
 output_folder = "output_images"
 os.makedirs(output_folder, exist_ok=True)
 

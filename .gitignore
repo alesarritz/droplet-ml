@@ -177,7 +177,7 @@ cython_debug/
 # Output folders
 output*/
 *mask*/
-data/
+**/*data/
 **/predictions/
 **/droplet_unet/
 
@@ -185,6 +185,7 @@ data/
 # Video and images
 *.mp4
 **/*.png
+!readme_images/*.png
 
 # Compressed files
 *.zip
