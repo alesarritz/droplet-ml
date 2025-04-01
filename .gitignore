@@ -178,9 +178,13 @@ cython_debug/
 output*/
 *mask*/
 data/
+**/predictions/
+**/droplet_unet/
 
-# Video
+
+# Video and images
 *.mp4
+**/*.png
 
 # Compressed files
 *.zip
