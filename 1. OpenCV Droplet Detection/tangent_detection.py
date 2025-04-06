@@ -94,7 +94,7 @@ def detect_tangents(image_path):
                 y_tangent2 = int(y + slope * (x_tangent2 - x))
 
             # Draw the correctly computed tangent in magenta
-            cv2.line(img, (x_tangent1, y_tangent1), (x_tangent2, y_tangent2), (255, 0, 255), 1)
+            cv2.line(img, (x_tangent1, y_tangent1), (x_tangent2, y_tangent2), (255, 0, 255), 2)
 
         # Draw correct tangent lines
         draw_tangent(x1, y1, slope1, image)
@@ -108,11 +108,10 @@ def detect_tangents(image_path):
             return round(angle, 2)
 
         angle1 = compute_angle(slope1)
-        angle2 = compute_angle(slope2)
+        angle2 = compute_angle(slope2) 
 
         # Save the processed image
         output_path = os.path.join(output_folder, os.path.basename(image_path))
-        print(f"Final image shape before saving: {image.shape}")
         cv2.imwrite(output_path, image)
         print(f"Saved: {output_path} - Angle1: {180 - angle1}°, Angle2: {180 - angle2}°")
 
