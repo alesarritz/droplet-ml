@@ -57,29 +57,30 @@ transform = transforms.Compose([
 # List image files
 image_files = sorted([f for f in os.listdir(input_dir) if f.endswith(('.png', '.jpg'))])
 
-# Predict masks and save
 for file in tqdm(image_files, desc="Predicting"):
     image_path = os.path.join(input_dir, file)
     image = Image.open(image_path).convert('RGB')
 
+    # Prepare for inference
     input_tensor = transform(image).unsqueeze(0).to(device)  # [1, 3, H, W]
-
+    
     with torch.no_grad():
-        output = model(input_tensor)           # [1, 3, H, W]
+        output = model(input_tensor)  # [1, 3, H, W]
         prediction = torch.argmax(output, dim=1).squeeze(0).cpu().numpy().astype(np.uint8)
 
-    # Save mask
-    class_to_gray = {
-        0: 0,    # background
-        1: 127,  # droplet
-        2: 255   # surface
-    }
+    # Create a 3-class grayscale mask
+    class_to_gray = {0: 0, 1: 127, 2: 255}
     visual_mask = np.vectorize(class_to_gray.get)(prediction).astype(np.uint8)
     mask_image = Image.fromarray(visual_mask)
-    mask_image.save(os.path.join(output_dir, file))
 
-    # Save only droplet mask
+    # Create droplet-only mask (class 1)
     droplet_mask = (prediction == 1).astype(np.uint8) * 255
     droplet_mask_img = Image.fromarray(droplet_mask)
-    droplet_mask_img.save(os.path.join(droplet_output_dir, file))
 
+    # Upsample to 720×540 using nearest neighbor
+    mask_image = mask_image.resize((720, 540), resample=Image.NEAREST)
+    droplet_mask_img = droplet_mask_img.resize((720, 540), resample=Image.NEAREST)
+
+    # Now save both upscaled masks
+    mask_image.save(os.path.join(output_dir, file))
+    droplet_mask_img.save(os.path.join(droplet_output_dir, file))

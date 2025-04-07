@@ -281,3 +281,23 @@ For each sampled mask, we detect the **largest contour** and compute its **bound
 <img src="readme_images/unet_bbox_000.png" alt="U-Net BBox 499" height="180"/>
 <img src="readme_images/unet_bbox_499.png" alt="U-Net BBox 999" height="180"/>
 
+
+### Tangent Angle Estimation
+
+---
+
+For each sampled droplet mask, we compute **tangent lines** at the leftmost and rightmost intersection points between the droplet contour and the **bottom edge** of its bounding box. These tangents are derived by fitting an **ellipse** to the droplet and using the analytical expression for tangents to conic sections.
+
+This allows us to track how the droplet's **contact angle** evolves over time, which is critical for understanding surface interaction, evaporation dynamics, and wettability.
+
+To ensure robustness:
+- Masks are **cleaned morphologically** to remove spurious bottom artifacts.
+- **Removed pixels** are optionally highlighted in cyan for visual inspection.
+
+#### Example Outputs – OpenCV:
+<img src="readme_images/opencv_tangent_000.png" alt="OpenCV Tangents 000" height="200"/>
+<img src="readme_images/opencv_tangent_499.png" alt="OpenCV Tangents 499" height="200"/>
+
+#### Example Outputs – U-Net:
+<img src="readme_images/unet_tangent_000.png" alt="U-Net Tangents 000" height="200"/>
+<img src="readme_images/unet_tangent_499.png" alt="U-Net Tangents 499" height="200"/>
