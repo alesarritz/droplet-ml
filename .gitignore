@@ -186,6 +186,10 @@ output*/
 *.mp4
 **/*.png
 !readme_images/*.png
+!**/segmentation_quality_plot.png
 
 # Compressed files
 *.zip
+
+# Other
+TODO.md
