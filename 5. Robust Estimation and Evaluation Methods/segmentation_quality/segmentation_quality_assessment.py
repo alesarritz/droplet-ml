@@ -7,7 +7,11 @@ import pandas as pd
 
 reference_path = '5. Robust Estimation and Evaluation Methods/droplet_masks'
 prediction_path = '5. Robust Estimation and Evaluation Methods/droplet_unet'
+<<<<<<< HEAD
 output = '5. Robust Estimation and Evaluation Methods/segmentation_quality/'
+=======
+output_csv = '5. Robust Estimation and Evaluation Methods/segmentation_quality'
+>>>>>>> 9e41088c90f8ddc56b269a515d90314ffcb1a4ab
 loss_threshold = 5.0  # % of pixels lost in the reference mask
 
 def get_frame_list(path):
@@ -99,18 +103,29 @@ def generate_summary(results):
     plt.legend()
     plt.tight_layout()
 
+<<<<<<< HEAD
     # Save plot to PNG
     plot_path = os.path.join(output, 'segmentation_quality_plot.png')
+=======
+    # Save plot to PNG 
+    plot_path = os.path.join(os.path.dirname(output_csv), 'segmentation_quality_plot.png')
+>>>>>>> 9e41088c90f8ddc56b269a515d90314ffcb1a4ab
     plt.savefig(plot_path)
     print(f"Saved plot to {plot_path}")
 
     plt.show()
 
     # Save CSV report
+<<<<<<< HEAD
     csv_path = os.path.join(output, 'segmentation_quality_report.csv')
     df = pd.DataFrame(results)
     df.to_csv(csv_path, index=False)
     print(f"Saved report to {csv_path}")
+=======
+    df = pd.DataFrame(results)
+    df.to_csv(output_csv, index=False)
+    print(f"Saved report to {output_csv}")
+>>>>>>> 9e41088c90f8ddc56b269a515d90314ffcb1a4ab
 
 
 if __name__ == '__main__':
