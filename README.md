@@ -301,3 +301,39 @@ To ensure robustness:
 #### Example Outputs – U-Net:
 <img src="readme_images/unet_tangent_000.png" alt="U-Net Tangents 000" height="200"/>
 <img src="readme_images/unet_tangent_499.png" alt="U-Net Tangents 499" height="200"/>
+
+## Section 5 Robust Estimation and Evaluation Methods
+This section focuses on evaluating segmentation quality and ellipse fitting accuracy using multiple estimation techniques.
+
+### Segmentation Quality Assessment
+To ensure reliability of the predicted droplet masks (e.g. from Unet), we compared them against OpenCV-based masks. The analysis computes:
+- **Pixel loss rate**: % of reference pixels missed in the prediction
+- **IoU (Intersection over Union)** and **Dice coefficient**
+
+The plot below summarizes segmentation quality across all frames:
+
+<img src="readme_images/segmentation_quality_plot.png" alt="Segmentation Quality Plot" height="250"/>
+
+As observed, most of the frames maintain a **pixel loss below 5%**, indicating good segmentation consistency after the initial transient. However, it is possible that a more tailored U-Net architecture or improved training strategy could yield even better results.
+
+### Ellipse Fitting Methods Comparison
+
+We evaluated three ellipse fitting strategies for estimating droplet shape:
+
+1. **Covariance-Based Fit**  
+   Estimates the ellipse by computing the centroid, covariance matrix, and eigen-decomposition of the droplet pixels. 
+   -> This method tends to overfit **vertically**, this is likely due to the missing bottom portion of the droplet.
+
+2. **Fitzgibbon Ellipse Fit (Upper Arc Only)**  
+   Uses least-squares conic fitting on the **top 90%** of the droplet contour.  
+   -> This method proved **most robust**, producing tight fits even when the base is flat or missing.
+
+3. **OpenCV `fitEllipse`**  
+   A direct ellipse fit to the largest contour using OpenCV.  
+   -> While fast, it is occasionally biased by bottom flatness or artifacts.
+
+Example output:
+
+<img src="readme_images/ellipse_fit_000.png" alt="Ellipse Fit Comparison" height="250"/>
+
+Here, the **green fit** (Fitzgibbon on upper arc) clearly provides the best match, especially for handling partial contour shapes.
