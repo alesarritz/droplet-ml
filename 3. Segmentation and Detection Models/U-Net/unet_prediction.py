@@ -7,9 +7,9 @@ import numpy as np
 from tqdm import tqdm
 
 # Directories
-input_dir = 'data'
-output_dir = 'predictions'
-droplet_output_dir = 'droplet_unet'
+input_dir = 'dataset_120_real'
+output_dir = '3. Segmentation and Detection Models/U-Net/predictions'
+droplet_output_dir = '3. Segmentation and Detection Models/U-Net/droplet_unet'
 os.makedirs(droplet_output_dir, exist_ok=True)
 os.makedirs(output_dir, exist_ok=True)
 
@@ -45,7 +45,8 @@ class UNet(nn.Module):
 # Load the model
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = UNet(num_classes=3).to(device)
-model.load_state_dict(torch.load('unet_model.pth', map_location=device))
+model_path = '3. Segmentation and Detection models/U-Net/unet_model.pth'
+model.load_state_dict(torch.load(model_path, map_location=device))
 model.eval()
 
 # Image preprocessing 
