@@ -62,75 +62,105 @@ def draw_angle_arc(ax, vertex, p1, p2, radius=20, color='red'):
     ax.add_patch(arc)
 
 def analyze_droplet_frame(mask_path, image_path, frame_id=None, save_step=100, save_path=None):
+    def log_issue(reason):
+        with open("log.txt", "a") as log:
+            log.write(f"Frame {frame_id}: not valid. {reason}\n")
+
     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
     image = cv2.imread(image_path)
     _, binary = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
     pixels, largest_contour = extract_droplet_pixels(binary)
     volume = len(pixels)
-    ellipse_result = fit_ellipse_to_upper_arc(binary)
-    if ellipse_result is None:
-        raise RuntimeError("Failed to fit ellipse")
-    (xc, yc), a, b, angle_deg, model = ellipse_result
 
-    theta_rad = np.radians(angle_deg)
-    cos_t, sin_t = np.cos(theta_rad), np.sin(theta_rad)
-    t = np.linspace(0, 2*np.pi, 720)
-    xt = a * np.cos(t)
-    yt = b * np.sin(t)
-    xe = xc + xt * cos_t - yt * sin_t
-    ye = yc + xt * sin_t + yt * cos_t
+    try:
+        ellipse_result = fit_ellipse_to_upper_arc(binary)
+        if ellipse_result is None:
+            raise ValueError("Failed to fit ellipse")
+        (xc, yc), a, b, angle_deg, model = ellipse_result
 
-    x, y, w, h = cv2.boundingRect(largest_contour)
-    x -= 1
-    w += 1
-    bottom_y = y + h
+        theta_rad = np.radians(angle_deg)
+        cos_t, sin_t = np.cos(theta_rad), np.sin(theta_rad)
+        t = np.linspace(0, 2*np.pi, 720)
+        xt = a * np.cos(t)
+        yt = b * np.sin(t)
+        xe = xc + xt * cos_t - yt * sin_t
+        ye = yc + xt * sin_t + yt * cos_t
 
-    points_on_surface = [(x_, y_) for x_, y_ in zip(xe, ye) if abs(y_ - bottom_y) <= 2]
-    if len(points_on_surface) < 2:
-        points_on_surface = [(x, bottom_y), (x + w, bottom_y)]
+        x, y, w, h = cv2.boundingRect(largest_contour)
+        x -= 1
+        w += 1
+        bottom_y = y + h
 
-    points_on_surface.sort(key=lambda p: p[0])
-    left_surface = points_on_surface[0]
-    right_surface = points_on_surface[-1]
+        points_on_surface = [(x_, y_) for x_, y_ in zip(xe, ye) if abs(y_ - bottom_y) <= 2]
+        if len(points_on_surface) < 2:
+            points_on_surface = [(x, bottom_y), (x + w, bottom_y)]
 
-    points_on_ellipse = list(zip(xe, ye))
-    points_on_ellipse_in_bbox = [(x_, y_) for x_, y_ in points_on_ellipse if y <= y_ <= y + h]
-    epsilon = 5
-    left_candidates = [p for p in points_on_ellipse_in_bbox if abs(p[0] - x) <= epsilon]
-    right_candidates = [p for p in points_on_ellipse_in_bbox if abs(p[0] - (x + w)) <= epsilon]
-    leftmost_touch = max(left_candidates, key=lambda p: p[1]) if left_candidates else left_surface
-    rightmost_touch = max(right_candidates, key=lambda p: p[1]) if right_candidates else right_surface
-    leftmost_touch = (x, leftmost_touch[1])
-    rightmost_touch = (x + w, rightmost_touch[1])
+        points_on_surface.sort(key=lambda p: p[0])
+        left_surface = points_on_surface[0]
+        right_surface = points_on_surface[-1]
 
-    left_angle = compute_contact_angle(left_surface, leftmost_touch)
-    right_angle = compute_contact_angle(rightmost_touch, right_surface)
+        points_on_ellipse = list(zip(xe, ye))
+        points_on_ellipse_in_bbox = [(x_, y_) for x_, y_ in points_on_ellipse if y <= y_ <= y + h]
 
-    # Optional save or show
-    if frame_id is not None and frame_id % save_step == 0:
-        fig, ax = plt.subplots(figsize=(8, 6))
-        ax.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-        ax.scatter(pixels[:, 0], pixels[:, 1], s=1, color='skyblue', alpha=0.05)
-        draw_ellipse(ax, xc, yc, a, b, angle_deg)
-        draw_bounding_box(ax, largest_contour)
+        for epsilon in [5, 10]:
+            left_candidates = [p for p in points_on_ellipse_in_bbox if abs(p[0] - x) <= epsilon]
+            right_candidates = [p for p in points_on_ellipse_in_bbox if abs(p[0] - (x + w)) <= epsilon]
 
-        ax.plot([x, x + w], [bottom_y, bottom_y], color='black', linestyle='--')
-        for pt in [left_surface, right_surface, leftmost_touch, rightmost_touch]:
-            ax.plot(pt[0], pt[1], 'ro')
-        ax.plot([left_surface[0], leftmost_touch[0]], [left_surface[1], leftmost_touch[1]], color='blue')
-        ax.plot([right_surface[0], rightmost_touch[0]], [right_surface[1], rightmost_touch[1]], color='blue')
-        draw_angle_arc(ax, left_surface, leftmost_touch, (left_surface[0] + 30, left_surface[1]), radius=25)
-        draw_angle_arc(ax, right_surface, rightmost_touch, (right_surface[0] - 30, right_surface[1]), radius=25)
-        ax.set_title(f"Frame {frame_id:03d} — Volume: {volume} pixels\nContact Angles: Left: {left_angle:.2f}°, Right: {right_angle:.2f}°", fontsize=14)
-        ax.axis('off')
-        plt.tight_layout()
-        if save_path:
-            plt.savefig(save_path)
-            plt.close()
+            if left_candidates:
+                left_candidates_sorted = sorted(left_candidates, key=lambda p: p[1], reverse=True)
+                for left in left_candidates_sorted:
+                    angle = compute_contact_angle(left_surface, (x, left[1]))
+                    if angle < 180:
+                        leftmost_touch = (x, left[1])
+                        break
+                else:
+                    continue
+            else:
+                continue
+
+            if right_candidates:
+                right_candidates_sorted = sorted(right_candidates, key=lambda p: p[1], reverse=True)
+                for right in right_candidates_sorted:
+                    angle = compute_contact_angle((x + w, right[1]), right_surface)
+                    if angle < 180:
+                        rightmost_touch = (x + w, right[1])
+                        break
+                else:
+                    continue
+
+            break
         else:
-            plt.show()
+            raise ValueError("Leftmost or rightmost touching point not valid within tolerances")
 
-    return left_angle, right_angle, volume
+        left_angle = compute_contact_angle(left_surface, leftmost_touch)
+        right_angle = compute_contact_angle(rightmost_touch, right_surface)
+
+        if frame_id is not None and frame_id % save_step == 0:
+            fig, ax = plt.subplots(figsize=(8, 6))
+            ax.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+            ax.scatter(pixels[:, 0], pixels[:, 1], s=1, color='skyblue', alpha=0.05)
+            draw_ellipse(ax, xc, yc, a, b, angle_deg)
+            draw_bounding_box(ax, largest_contour)
+            for pt in [left_surface, right_surface, leftmost_touch, rightmost_touch]:
+                ax.plot(pt[0], pt[1], 'ro')
+            ax.plot([left_surface[0], leftmost_touch[0]], [left_surface[1], leftmost_touch[1]], color='blue')
+            ax.plot([right_surface[0], rightmost_touch[0]], [right_surface[1], rightmost_touch[1]], color='blue')
+            draw_angle_arc(ax, left_surface, leftmost_touch, (left_surface[0] + 30, left_surface[1]), radius=25)
+            draw_angle_arc(ax, right_surface, rightmost_touch, (right_surface[0] - 30, right_surface[1]), radius=25)
+            ax.set_title(f"Frame {frame_id:03d} — Volume: {volume} pixels\nContact Angles: Left: {left_angle:.2f}°, Right: {right_angle:.2f}°", fontsize=14)
+            ax.axis('off')
+            plt.tight_layout()
+            if save_path:
+                plt.savefig(save_path)
+                plt.close()
+            else:
+                plt.show()
+
+        return left_angle, right_angle, volume, (xc, yc, a, b, angle_deg), (x, y, w, h), True
+
+    except Exception as e:
+        log_issue(str(e))
+        return None, None, volume, (xc, yc, a, b, angle_deg), (x, y, w, h), False
 
 # Draws the ellipse using matplotlib patches.
 def draw_ellipse(ax, xc, yc, a, b, angle_deg):
@@ -186,29 +216,35 @@ def draw_all_lines(ax, left_surface, right_surface, leftmost_touch, rightmost_to
     ax.plot([right_surface[0], rightmost_touch[0]], [right_surface[1], rightmost_touch[1]], color='blue')
 
 if __name__ == "__main__":
-    os.makedirs("5. Robust Estimation and Evaluation Methods/droplet_analysis/analysis_plots", exist_ok=True)
+    os.makedirs("5. Robust Estimation and Evaluation Methods/analysis/analysis_plots", exist_ok=True)
 
-    summary_csv = "5. Robust Estimation and Evaluation Methods/droplet_analysis/droplet_analysis.csv"
+    summary_csv = "5. Robust Estimation and Evaluation Methods/analysis/droplet_analysis.csv"
     previous_volume = None
 
     with open(summary_csv, mode="w", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(["Frame", "Left_Angle", "Right_Angle", "Volume", "Volume_Loss"])
+        writer.writerow(["Frame", "Left_Angle", "Right_Angle", "Volume", "Volume_Loss", "Ellipse_XC", "Ellipse_YC", "Ellipse_A", "Ellipse_B", "Ellipse_Theta", "BBox_X", "BBox_Y", "BBox_W", "BBox_H", "Valid"])
 
-        for i in range(0, 5000, 100):
+        for i in range(0, 5000, 1):
             frame_id = i
             frame_str = f"{i:03d}"
             mask_path = f"5. Robust Estimation and Evaluation Methods/droplet_masks/frame_{frame_str}_mask.png"
             image_path = f"3. Segmentation and Detection Models/processed_data/data/frame_{frame_str}.png"
-            output_path = f"5. Robust Estimation and Evaluation Methods/droplet_analysis/analysis_plots/analysis_{frame_str}.png"
+            output_path = f"5. Robust Estimation and Evaluation Methods/analysis/analysis_plots/analysis_{frame_str}.png"
 
             try:
-                left_angle, right_angle, volume = analyze_droplet_frame(
-                    mask_path, image_path, frame_id=frame_id, save_step=1, save_path=output_path
+                result = analyze_droplet_frame(
+                    mask_path, image_path, frame_id=frame_id, save_step=50, save_path=output_path
                 )
+                if result is None:
+                    writer.writerow([frame_str] + [None]*13 + [False])
+                    print(f"Logged invalid frame {frame_str}")
+                    continue
+                left_angle, right_angle, volume, ellipse_data, bbox_data, valid = result
                 volume_loss = None if previous_volume is None else previous_volume - volume
                 previous_volume = volume
-                writer.writerow([frame_str, left_angle, right_angle, volume, volume_loss])
+                writer.writerow([frame_str, left_angle, right_angle, volume, volume_loss, *ellipse_data, *bbox_data, valid])
                 print(f"Saved and logged frame {frame_str}")
             except Exception as e:
-                print(f"Skipped frame {frame_str}: {e}")
+                writer.writerow([frame_str] + [None]*13 + [False])
+                print(f"Skipped frame {frame_str} due to exception: {e}")

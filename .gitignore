@@ -193,3 +193,5 @@ output*/
 
 # Other
 TODO.md
+*.csv
+*.txt
