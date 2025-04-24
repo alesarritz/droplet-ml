@@ -343,7 +343,7 @@ Here, the **green fit** (Fitzgibbon on upper arc) clearly provides the best matc
 In this section we performed an extensive per-frame analysis across 5000 frames. The objective was to extract meaningful geometric and physical descriptors including volume, contact angles, and ellipse/bounding-box properties. The full analysis pipeline is implemented in [`droplet_analysis.py`] and the statistics/plots are handled by [`visualizations_and_statistics.py`].
 
 #### Extracted Features Per Frame
-For each frame, the following quantities were computed and stored:
+For each frame, the following quantities were computed and stored in `droplet_analysis.csv`:
 - **Left & Right Contact Angles** (degrees) — from tangent lines at contact points.
 - **Droplet Volume** (in pixels) — number of segmented foreground pixels.
 - **Volume Loss** — per-frame change in volume.
