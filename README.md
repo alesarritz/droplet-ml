@@ -202,6 +202,33 @@ During each epoch, the training loss is logged, and evaluation metrics are compu
 - **Dice Score** per class
 
 All metrics are tracked across epochs for performance monitoring.
+A custom PyTorch `Dataset` class, `UNetSegmentationDataset`, is defined to load input images and corresponding segmentation masks. Both are resized to a fixed resolution of **(180, 240)** and converted to tensors. Masks are converted to `LongTensor` format, as required for `nn.CrossEntropyLoss`.
+
+The dataset is split **80/20** into training and testing subsets, and loaded using `DataLoader` with `batch_size = 8`.
+
+
+#### Step 3: Define U-Net Model
+
+A compact but powerful **U-Net** is implemented. It features:
+- A convolutional **encoder** with max-pooling layers to downsample the image and capture features.
+- A **middle bottleneck** block to learn abstract representations.
+- A **decoder** with bilinear upsampling and convolution layers to recover spatial resolution.
+
+The model outputs a tensor of shape `(N, 3, H, W)` where each channel represents class logits.
+
+#### Step 4: Training
+
+The model is trained for 30 epochs using:
+- **Loss**: `CrossEntropyLoss` for multi-class segmentation.
+- **Optimizer**: Adam with an initial learning rate of `1e-3`.
+- **Learning Rate Scheduler**: Reduces LR if the validation loss plateaus.
+- **Mixed Precision Training**: Implemented using `torch.cuda.amp` for faster training on GPUs.
+
+During each epoch, the training loss is logged, and evaluation metrics are computed on the test set:
+- **IoU (Intersection over Union)** per class
+- **Dice Score** per class
+
+All metrics are tracked across epochs for performance monitoring.
 
 #### Step 5: Testing and Visualization
 
@@ -231,13 +258,70 @@ In order to make the use of the trained model practical, the `unet_prediction.py
 - A **grayscale prediction mask** (with 0 = background, 127 = droplet, 255 = surface) saved in `predictions/`
 - A **binary droplet-only mask** (white = droplet, black = background) saved in `droplet_unet/`
 
-
-
-### Phase 3: Other models in development...
+### Phase 3: DeepLabV3+ Model
 
 ---
 
-YOLO, DeepLabV3+
+This phase focuses on training and evaluating the DeepLabV3+ model. As the U-Net, DeepLabV3+ is trained to distinguish between **background**, **droplet**, and **surface**.
+
+The code related to this section can be found in the folder `DeepLabV3+`.
+
+#### Step 1: Image transformation
+
+First, a transformation pipeline is initialized, that includes:
+- Resizing the image to 512x512 pixels
+- Normalizing pixel values (from [0, 255] to [-1, 1])
+- Converting images to pytorch tensors
+
+#### Step 2: Custom Dataset
+
+We define `DropletDataset` to load input images and corresponding segmentation masks.
+
+The dataset is split **80/20** into training and testing subsets, and loaded using `DataLoader` with `batch_size = 8`.
+
+#### Step 3: Define DeepLabV3+ Model
+
+The DeepLabV3+ model is modified to enable the multiclass segmentation. The 5th layer of the NN is modified in the following way:
+```
+model.classifier[4] = nn.Conv2d(256, NUM_CLASSES, kernel_size=1)
+```
+
+#### Step 4: Training
+
+The model is trained for 20 epochs using:
+- **Loss**: `CrossEntropyLoss` for multi-class segmentation.
+- **Optimizer**: Adam with an initial learning rate of `1e-3`.
+- **Learning Rate Scheduler**: Reduces LR if the validation loss plateaus.
+
+During each epoch, the training loss is logged, and evaluation metrics are computed on the test set:
+- **IoU (Intersection over Union)** per class
+- **Dice Score** per class
+
+All metrics are tracked across epochs for performance monitoring.
+
+#### Step 5: Testing and Visualization
+
+After training, the model is evaluated on test samples:
+- For each test image, the **input**, **ground truth mask**, and **predicted mask** are visualized side-by-side.
+
+<img src="readme_images/deepLabV3+_prediction_1.png" alt="DeepLabV3+ Prediction" height=240>
+
+<img src="readme_images/deepLabV3+_prediction_2.png" alt="DeepLabV3+ Prediction" height=240>
+
+Additionally, three training curves are plotted:
+- Average training loss per epoch
+- Mean IoU per epoch
+- Mean Dice score per epoch
+
+These plots provide insight into training stability, convergence, and model accuracy.
+
+<img src="readme_images/deepLabV3+_training.png" alt="DeepLabV3+ Training" height=240>
+
+### Phase 4: Other models in development...
+
+---
+
+YOLO, ...
 
 
 ## Section 4: Segmented Images Processing
