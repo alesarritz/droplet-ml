@@ -336,4 +336,58 @@ Example output:
 
 <img src="readme_images/ellipse_fit_000.png" alt="Ellipse Fit Comparison" height="250"/>
 
-Here, the **green fit** (Fitzgibbon on upper arc) clearly provides the best match, especially for handling partial contour shapes.
+Here, the **green fit** (Fitzgibbon on upper arc) clearly provides the best match, especially for handling partial contour shapes. Therefore, this technique was chosen for the Ellips Fit performed in the next section. 
+
+### Full Droplet Analysis Over Time
+
+In this section we performed an extensive per-frame analysis across 5000 frames. The objective was to extract meaningful geometric and physical descriptors including volume, contact angles, and ellipse/bounding-box properties. The full analysis pipeline is implemented in [`droplet_analysis.py`] and the statistics/plots are handled by [`visualizations_and_statistics.py`].
+
+#### Extracted Features Per Frame
+For each frame, the following quantities were computed and stored:
+- **Left & Right Contact Angles** (degrees) — from tangent lines at contact points.
+- **Droplet Volume** (in pixels) — number of segmented foreground pixels.
+- **Volume Loss** — per-frame change in volume.
+- **Ellipse Fit Parameters**: center (x, y), major axis `a`, minor axis `b`, and orientation θ.
+- **Bounding Box**: top-left coordinate and size (width, height).
+
+Each frame was also flagged with a **validity boolean**, indicating whether the angle and fitting procedure succeeded.
+
+#### Summary Statistics
+All results were aggregated and split into valid/invalid frames. The summary table below (valid frames only) reports the **mean**, **standard deviation**, **minimum**, and **maximum** for each variable:
+
+| Metric       | Frame   | Left_Angle | Right_Angle | Volume   | Volume_Loss | Ellipse_XC | Ellipse_YC | Ellipse_A | Ellipse_B | Ellipse_Theta | BBox_X | BBox_Y | BBox_W | BBox_H | Ellipse_AR | BBox_AR |
+|--------------|---------|------------|-------------|----------|--------------|-------------|-------------|------------|------------|----------------|--------|--------|--------|--------|-------------|----------|
+| **Mean**     | 2484.76 | 119.83     | 120.31      | 66974.94 | 6.10         | 402.17      | 266.68      | 161.75     | 151.11     | -0.19          | 238.83 | 114.90 | 326.25 | 246.10 | 1.0707      | 1.3264   |
+| **Std**      | 1434.66 | 1.92       | 1.92        | 6068.09  | 41.56        | 12.87       | 7.30        | 7.27       | 6.88       | 6.29           | 18.17  | 12.42  | 14.71  | 12.42  | 0.0216      | 0.0345   |
+| **Min**      | 1.0     | 113.06     | 113.96      | 52998.0  | -525.0       | 393.39      | 249.35      | 141.36     | 132.57     | -20.56         | 216.0  | 85.0   | 286.0  | 222.0  | 0.9121      | 1.2602   |
+| **Max**      | 4987.0  | 123.33     | 131.63      | 83945.0  | 409.0        | 429.72      | 277.31      | 181.60     | 180.47     | 93.78          | 286.0  | 139.0  | 366.0  | 276.0  | 1.0995      | 1.3896   |
+
+
+The full grouped report (valid vs invalid) is saved in `full_statistics_by_validity.csv`, While the only-valid statistics are saved in `summary_statistics_valid.csv`.
+
+#### **Visual Trends**
+
+We also plotted key time-series below to monitor droplet evolution and detect any instability or transition:
+
+#### Contact Angles Over Time
+<img src="readme_images/contact_angles.png" height="250"/>
+
+Stable contact angles indicate consistent contact conditions. Sudden shifts may relate to physical transitions or simply calculus error to further investigate.
+
+#### Volume and Volume Loss
+<img src="readme_images/volume.png" height="250"/>
+<img src="readme_images/volume_loss.png" height="250"/>
+
+The volume gradually decreases due to evaporation, with fluctuations corresponding to segmentation boundary jitter. The **volume loss** plot captures sudden mass shifts, segmentation drops or simply calculus error to further investigate.
+
+#### Ellipse Axes and Aspect Ratio
+<img src="readme_images/ellipse_axes.png" height="250"/>
+<img src="readme_images/ellipse_aspect_ratio.png" height="250"/>
+
+The ellipse aspect ratio remains close to 1.08, indicating a slightly oblate shape. Deviations from this might suggest transient deformation or simply calculus error to further investigate.
+
+#### Bounding Box Analysis
+<img src="readme_images/bbox_dimensions.png" height="250"/>
+<img src="readme_images/bbox_aspect_ratio.png" height="250"/>
+
+The bounding box gives a rough macro-scale containment of the droplet. Sudden shape changes or jumps may indicate motion, bubbling or simply calculus error to further investigate.
