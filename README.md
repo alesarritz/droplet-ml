@@ -475,3 +475,96 @@ The ellipse aspect ratio remains close to 1.08, indicating a slightly oblate sha
 <img src="readme_images/bbox_aspect_ratio.png" height="250"/>
 
 The bounding box gives a rough macro-scale containment of the droplet. Sudden shape changes or jumps may indicate motion, bubbling or simply calculus error to further investigate.
+
+## Section 6: CNN Regressor Model
+
+To estimate physical and geometric properties directly from droplet masks, we developed a **CNN-based Regressor**. This model predicts 12 continuous variables directly from each binary droplet segmentation mask:
+
+**Predicted Quantities** (per frame):
+
+* **Left Contact Angle** (degrees)
+* **Right Contact Angle** (degrees)
+* **Volume** (foreground pixel count)
+* **Ellipse Center**: `xc`, `yc`
+* **Ellipse Axes**: major `a`, minor `b`
+* **Ellipse Orientation**: `θ` (radians)
+* **Bounding Box**: lower-left `(x, y)`, width `w`, height `h`
+
+### Dataset Preparation
+
+We used the ground-truth values computed in the `droplet_analysis.csv` file. Invalid frames were filtered out, and the remaining data was standardized using `StandardScaler`.
+
+The masks (grayscale `.png` images) were loaded from:
+
+```
+../3. Segmentation and Detection Models/droplet_masks
+```
+
+### Data Augmentation & Preprocessing
+
+To improve generalization, we applied the following **image transformations** using `torchvision.transforms`:
+
+* Random rotation (±15°)
+* Random horizontal flip
+* Resize to 240×180 (preserving the original 4:3 aspect ratio)
+* Conversion to tensor
+
+### Model Architecture
+
+The model is defined in `cnn_model.py` under the class `DropletCNNRegressor`. It consists of a lightweight CNN with several convolutional and pooling layers, followed by fully connected layers to regress the 12 output values.
+
+### Training Details
+
+* **Loss Function**: Smooth L1 Loss (robust to outliers)
+* **Optimizer**: Adam (`lr=1e-4`)
+* **Scheduler**: ReduceLROnPlateau (with `patience=2`)
+* **Early Stopping**: If no improvement for 3 epochs
+* **Hardware**: Trained on GPU (if available)
+
+Training was performed for up to 40 epochs with:
+
+* **80% training / 20% testing split**
+* Batch size: 32 (train), 16 (val)
+
+```bash
+Train Loss: ~0.012 - Validation R²: ~0.94 (typical)
+```
+
+### Evaluation
+
+After training, the model achieved:
+
+* **Mean Absolute Error**: \~0.015
+* **R² Score**: \~0.94 (aggregated)
+* Good alignment between ground truth and prediction, even across complex masks.
+
+Example prediction:
+
+```
+Ground truth : [120.3, 118.7, 67900, 402.5, 266.8, 161.7, 150.1, -0.15, 238.8, 114.9, 326.2, 246.1]
+Prediction   : [119.9, 118.4, 67650, 401.9, 266.2, 160.9, 149.8, -0.11, 239.1, 114.5, 325.8, 245.9]
+```
+
+### Training History
+
+Below are loss and R² plots across training:
+
+<p float="left">
+  <img src="readme_images/cnn_regressor_performance.png" height="400"/>
+</p>
+
+The model converges quickly with smooth validation trends, indicating stable learning dynamics.
+
+### Model Saving
+
+The final best model is saved as:
+`cnn_regressor_best.pth`
+
+A scaler for re-normalizing outputs is saved as:
+`scaler.joblib`
+
+### Evaluation of the Regressor
+
+The `evaluate_regressor.py` script loads the trained CNN model and compares its predictions to ground truth values from `droplet_analysis.csv`. It prints angle and volume predictions and visualizes the results on droplet masks.
+
+Utility functions for visualization are defined in `utils.py`.
