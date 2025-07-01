@@ -195,3 +195,7 @@ output*/
 TODO.md
 *.csv
 *.txt
+
+# Models
+*.pth
+*.joblib

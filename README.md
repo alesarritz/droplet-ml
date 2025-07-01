@@ -317,11 +317,6 @@ These plots provide insight into training stability, convergence, and model accu
 
 <img src="readme_images/deepLabV3+_training.png" alt="DeepLabV3+ Training" height=240>
 
-### Phase 4: Other models in development...
-
----
-
-YOLO, ...
 
 
 ## Section 4: Segmented Images Processing
@@ -386,7 +381,7 @@ To ensure robustness:
 <img src="readme_images/unet_tangent_000.png" alt="U-Net Tangents 000" height="200"/>
 <img src="readme_images/unet_tangent_499.png" alt="U-Net Tangents 499" height="200"/>
 
-## Section 5 Robust Estimation and Evaluation Methods
+## Section 5: Robust Estimation and Evaluation Methods
 This section focuses on evaluating segmentation quality and ellipse fitting accuracy using multiple estimation techniques.
 
 ### Segmentation Quality Assessment
